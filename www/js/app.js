@@ -1,11 +1,52 @@
-// Ionic Starter App
+(function (){
+  var app =  angular.module('starter', ['ionic','angularMoment'])
 
-// angular.module is a global place for creating, registering and retrieving Angular modules
-// 'starter' is the name of this angular module example (also set in a <body> attribute in index.html)
-// the 2nd parameter is an array of 'requires'
-angular.module('starter', ['ionic'])
+  app.controller('RedditCtrl',function($scope, $http){
+    $scope.posts = [];
+    $http.get('https://www.reddit.com/r/gaming/new/.json')
+    .success(function(posts){
+      //console.log(posts);
+      angular.forEach(posts.data.children, function(post){
+        $scope.posts.push(post.data);
+      });
+    });
+    $scope.cargarNuevos = function(){
+      var params2= {};
+      if($scope.posts.lenght>0){
+        params2['after']= $scope.posts[$scope.posts.lenght-1].name;
+      }
+      $http.get('https://www.reddit.com/r/gaming/new/.json',{params: params2})
+      .success(function(posts){
+        //console.log(posts);
+        angular.forEach(posts.data.children, function(post){
+          $scope.posts.push(post.data);
+        });
+        $scope.$broadcast('scroll.infiniteScrollComplete')
+      });
+    };
+    $scope.refrescarPost = function(){
+      if($scope.posts.lenght>0){
+        var params2= {'before':$scope.posts[0].name};
+      }else{
+        return;
+      }
+      $http.get('https://www.reddit.com/r/gaming/new/.json',{params: params2})
+      .success(function(posts){
+        var newPost =[];
 
-.run(function($ionicPlatform) {
+        angular.forEach(posts.data.children, function(post){
+          newPost.push(post.data);
+        });
+        $scope.posts = newPost.concat($scope.posts)
+        $scope.$broadcast('scroll.refreshComplete')
+      });    
+    };
+    $scope.openLink = function(url){
+      window.open(url,'_blank');
+    };
+  });
+//jaspodjaposjdopasjdpoasdo
+app.run(function($ionicPlatform) {
   $ionicPlatform.ready(function() {
     if(window.cordova && window.cordova.plugins.Keyboard) {
       // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
@@ -17,8 +58,12 @@ angular.module('starter', ['ionic'])
       // a much nicer keyboard experience.
       cordova.plugins.Keyboard.disableScroll(true);
     }
+    if(window.cordova && window.cordova.InAppBrowser){
+      window.open = window.cordova.InAppBrowser.open;      
+    }
     if(window.StatusBar) {
       StatusBar.styleDefault();
     }
   });
 })
+}());
